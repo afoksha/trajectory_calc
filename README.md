@@ -9,6 +9,8 @@ g++ trajectory_calc.cpp -o trajectory_calc
 
 Then do:
 
-gnuplot
+python3 ./calcTrackAdv.py
 
-> splot './trajectory.dat' using 1:2:3 with lines
+You may need:
+pip3 install --user --upgrade matplotlib
+pip3 install --user --upgrade numpy
