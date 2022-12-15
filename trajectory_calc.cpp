@@ -3,6 +3,7 @@
 #include <functional>
 #include <random>
 #include <ctime>
+#include <iomanip>
 
 const double pi = 3.14159265358979324;
 
@@ -170,7 +171,7 @@ struct params_t
     }
 };
 
-void RK_iterate(
+void RK_iterate(bool single_run,
         double step,
         const params_t& params,                                                 /* calculation parameters */
         const phasepoint_t& ip,                                                 /* initial position and velocity */
@@ -186,21 +187,25 @@ void RK_iterate(
 
     phasepoint_t p = ip;
 
-    /* header */
-    std::cout << "# ================================================================================= " << std::endl;
-    std::cout << "# w_x = " << params.w_x << ", w_y = " << params.w_y << ", w_z = " << params.w_z << std::endl;
-    std::cout << "# m = " << params.m << std::endl;
-    std::cout << "# c = " << params.c << std::endl;
-    std::cout << "# mu = " << params.mu << ", c = " << params.c << std::endl;
-    std::cout << "# ================================================================================= " << std::endl;
-    std::cout << "# v0_x = " << ip.p << std::endl;
-    std::cout << "# v0_z = " << ip.r << std::endl;
-    std::cout << "# ================================================================================= " << std::endl;
-    std::cout << std::endl;
+    if (single_run)
+    {
+        /* header */
+        std::cout << "# ================================================================================= " << std::endl;
+        std::cout << "# w_x = " << params.w_x << ", w_y = " << params.w_y << ", w_z = " << params.w_z << std::endl;
+        std::cout << "# m = " << params.m << std::endl;
+        std::cout << "# c = " << params.c << std::endl;
+        std::cout << "# mu = " << params.mu << ", c = " << params.c << std::endl;
+        std::cout << "# ================================================================================= " << std::endl;
+        std::cout << "# v0_x = " << ip.p << std::endl;
+        std::cout << "# v0_z = " << ip.r << std::endl;
+        std::cout << "# ================================================================================= " << std::endl;
+        std::cout << std::endl;
+    }
 
     do {
         /* main data output */
-        std::cout << p.x << " " << p.y << " " << p.z << std::endl;
+        if (single_run)
+            std::cout << p.x << " " << p.y << " " << p.z << std::endl;
 
         t += h;
 
@@ -219,18 +224,27 @@ void RK_iterate(
     double distance = std::sqrt(p.x * p.x + p.y * p.y);
     double alpha = 180.0 * std::acos(cos_alpha) / pi;
 
-    /* footer */
-    std::cout << std::endl;
-    std::cout << "# ================================================================================= " << std::endl;
-    std::cout << "# max height = " << max_z << std::endl;
-    std::cout << "# t = " << t << std::endl;
-    std::cout << "# distance = " << distance << std::endl;
-    std::cout << "# angle = " << alpha << std::endl;
-    std::cout << "# ================================================================================= " << std::endl;
+    if (single_run)
+    {
+        /* footer */
+        std::cout << std::endl;
+        std::cout << "# ================================================================================= " << std::endl;
+        std::cout << "# max height = " << max_z << std::endl;
+        std::cout << "# t = " << t << std::endl;
+        std::cout << "# distance = " << distance << std::endl;
+        std::cout << "# angle = " << alpha << std::endl;
+        std::cout << "# ================================================================================= " << std::endl;
+    }
+    else
+        std::cout << ", max height: " << max_z << ", time: " << t << ", distance: " << distance << ", arrival angle: " << alpha << std::endl;
 }
 
 int main(int argc, char* argv[])
 {
+    /* if you launched the program without params that means you want a single simulation,
+       otherwise we will create a readable table for you */
+    bool single_run = argc == 1;
+
     /* paramaters */
     params_t params;
     params.init_altitude(169.0);            /* Makeevka is 169 meters above sea level */
@@ -320,13 +334,29 @@ int main(int argc, char* argv[])
 
     /* initial conditions */
     phasepoint_t ip;
-
-    const double angle = 67.0;
-    ip.initialize(0.5, pi * angle / 180.0, 662);    /* fire from 0.5 meters above the ground */
-
-    /* Runge-Kutta iterative solution */
     const double step = 1.0 / 2048.0;
-    RK_iterate(step, params, ip, F);
+    const double z0 = 0.5;              /* fire from 0.5 meters above the ground */
+    const double speed = 662.0;         /* with 662 m / s speed */
+
+    if (!single_run)   /* you want a table */
+    {
+        std::cout << std::setprecision(2) << std::fixed;
+
+        for (double angle = 15.0; angle < 88.0; angle += 0.5)
+        {
+            std::cout << "departure angle: " << angle;
+            ip.initialize(z0, pi * angle / 180.0, speed);
+
+            /* Runge-Kutta iterative solution */
+            RK_iterate(single_run, step, params, ip, F);
+        }
+    }
+    else                /* single simulation */
+    {
+        const double angle = 67.0;
+        ip.initialize(z0, pi * angle / 180.0, speed);          /* fire from 0.5 meters above the ground */
+        RK_iterate(single_run, step, params, ip, F);
+    }
 
     return 0;
 }
