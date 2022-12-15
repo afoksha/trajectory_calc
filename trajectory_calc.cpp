@@ -171,6 +171,13 @@ struct params_t
     }
 };
 
+double NATO_G7_SHELL_DRAG_COEFFICIENT(double s /* speed, in m / sec */)
+{
+    const double mach_factor = 0.00291545189;   /* 1 / 343 */
+    s *= mach_factor;
+    return (7.11 + s * (-13.9 + s * (8.25 + 0.25 * s))) / (59.25 + s * (-100.4 + s * (46.0 + s)));
+}
+
 void RK_iterate(bool single_run,
         double step,
         const params_t& params,                                                 /* calculation parameters */
@@ -293,7 +300,8 @@ int main(int argc, char* argv[])
         //        s is the speed (the number), e.g. the norm of v
         //
         //=========================================================================================================
-        double ND = 0.5 * params.c * rho * params.A * s;
+        // double ND = 0.5 * params.c * rho * params.A * s;
+        double ND = 0.5 * NATO_G7_SHELL_DRAG_COEFFICIENT(s) * rho * params.A * s;
 
         double RN = params.R * s;                   /* not a Reynolds number, but something closely related to it */
         double q = smootherstep(Tmin, Tmax, RN);    /* q is the proportion of the Newton drag in the total drag */
